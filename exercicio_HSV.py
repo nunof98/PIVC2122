@@ -16,7 +16,7 @@ image_HSV = cv2.cvtColor(image_float, cv2.COLOR_BGR2HSV)
 image_HSV[:, :, 0] = 120.0
 
 # convert HSV image to RGB
-image_HSV_BGR = cv2.cvtColor(image_HSV, cv2.COLOR_HSV2BGR)
+image_final = cv2.cvtColor(image_HSV, cv2.COLOR_HSV2BGR)
 # show manipulated image
-cv2.imshow("Final", image_HSV_BGR)
+cv2.imshow("Final", image_final)
 cv2.waitKey(0)
