@@ -2,7 +2,6 @@ import cv2
 import os
 
 folder = "images"
-
 img = cv2.imread(os.path.join(folder, "moedas.jpg"))
 
 window_name = "Moedas threshold"

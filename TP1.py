@@ -1,5 +1,6 @@
-import cv2
 import os
+import cv2
+import numpy as np
 from matplotlib import pyplot as plt
 
 
@@ -8,72 +9,100 @@ def main():
     folder = "images"
     img_original = cv2.imread(os.path.join(folder, "pneu.png"))
 
-    # get image with only the red channel
-    img_red_channel = img_original[:, :, 2]
+    # convert image to grayscale
+    img_gray = cv2.cvtColor(img_original, cv2.COLOR_BGR2GRAY)
 
-    # binarize image with otsu method
-    _, img_otsu = cv2.threshold(img_red_channel, 0, 255, cv2.THRESH_OTSU)
     # binarize image with fixed threshold
-    _, img_otsu = cv2.threshold(img_red_channel, 140, 255, cv2.THRESH_BINARY)
+    _, img_thresh = cv2.threshold(img_gray, 254, 255, cv2.THRESH_BINARY)
 
-    # create figure
-    fig = plt.figure(1)
+    # detect lines using HoughLines method
+    lines = cv2.HoughLinesP(img_thresh, rho=1, theta=np.pi/180, threshold=25, minLineLength=50, maxLineGap=50)
+    # create copy of original image
+    img_lines = img_original.copy()
+    # get coordinates of every line detected and draw them on new image
+    for line in lines:
+        x1, y1, x2, y2 = line[0]
+        cv2.line(img_lines, (x1, y1), (x2, y2), (0, 255, 0), 1)
+        cv2.circle(img_lines, (x1, y1), 1, (255, 0, 0), 2)
+        cv2.circle(img_lines, (x2, y2), 1, (255, 0, 0), 2)
+
+    # calculate distance
+    distance = measure_distance(lines)
+    print("The distance between the 2 lines is: {} mm".format(round(distance*0.1, 1)))
+
+    # show resulting images in figure
     plt.set_cmap("gray")
-
-    # Show image 1
-    plt.subplot(1, 3, 1)
+    # show image 1
+    plt.subplot(1, 4, 1)
     plt.title("Original")
     plt.axis("off")
     plt.imshow(img_original)
 
-    # Show image 2
-    plt.subplot(1, 3, 2)
-    plt.title("Red channel")
+    # show image 2
+    plt.subplot(1, 4, 2)
+    plt.title("Gray")
     plt.axis("off")
-    plt.imshow(img_red_channel)
+    plt.imshow(img_gray)
 
-    # Show image 3
-    plt.subplot(1, 3, 3)
+    # show image 3
+    plt.subplot(1, 4, 3)
     plt.title("Binary")
     plt.axis("off")
-    plt.imshow(img_otsu)
+    plt.imshow(img_thresh)
+
+    # show image 4
+    plt.subplot(1, 4, 4)
+    plt.title("Lines")
+    plt.axis("off")
+    plt.imshow(img_lines)
     plt.show()
 
-    # get lines' x coordinates
-    line1_x1, line1_x2, line2_x1, line2_x2 = find_x_coordinates(img_otsu)
-    print(line1_x1, line1_x2, line2_x1, line2_x2)
 
-    # calculate distance from the center of both lines
-    distance = (((line1_x1 + line1_x2) / 2) - ((line2_x1 + line2_x2) / 2)) * 0.1
-    print("The distance between the centers of both lines is", round(distance, 2), "mm")
-    # calculate distance in between both lines
-    distance = (line1_x1 - line2_x2) * 0.1
-    print("The distance between most right point of line 1 to the most left point of line 2 is",
-          round(distance, 2), "mm")
+def measure_distance(lines):
+    # get lines from list
+    line1, line2 = lines
+
+    # get points from line1
+    x1, y1, x2, y2 = line1[0]
+    p1 = np.array([x1, y1])
+    p2 = np.array([x2, y2])
+
+    # get points from line2
+    x1, y1, x2, y2 = line2[0]
+    p3 = np.array([x1, y1])
+    p4 = np.array([x2, y2])
+
+    # distance from bottom
+    # calculate angle between lines
+    angle = get_angle(p1, p3, p4)
+    # calculate distance between lines
+    h = np.sqrt(((p1[0] - p3[0])**2) + ((p1[1] - p3[1])**2))
+    # calculate distance
+    distance_bottom = h * np.sin(angle)
+
+    # distance from top
+    # calculate angle between lines
+    angle = get_angle(p2, p4, p3)
+    # calculate distance between lines
+    h = np.sqrt(((p2[0] - p4[0])**2) + ((p2[1] - p4[1])**2))
+    # calculate distance
+    distance_top = h * np.sin(angle)
+
+    # calculate average distance
+    distance = np.average([distance_top, distance_bottom])
+    return distance
 
 
-#
-# Find the width of two lines in an image
-# Returns the 4 x coordinates (start and end of both lines)
-#
-def find_x_coordinates(img_binary):
-    state = 0
-    for y in range(img_binary.shape[0]):  # columns
-        for x in range(img_binary.shape[1]):  # lines
-            # get pixel
-            pixel = img_binary[y, x]
-            if (state == 0 and pixel == 255):  # first x coordinate of 1st line (start)
-                state = 1
-                x1 = x
-            elif (state == 1 and pixel == 0):  # last x coordinate of 1st line (end)
-                state = 2
-                x2 = x
-            elif (state == 2 and pixel == 255 and x < x1 - 4):  # first x coordinate of 2nd line (start)
-                state = 3
-                x3 = x
-            elif (state == 3 and pixel == 0 and x < x2 - 4):  # last x coordinate of 2nd line (end)
-                x4 = x
-                return x1, x2, x3, x4
+def get_angle(a, b, c):
+    # create vectors
+    ba = a - b
+    bc = c - b
+
+    # calculate angles' cosine value
+    cosine_angle = np.dot(ba, bc) / (np.linalg.norm(ba) * np.linalg.norm(bc))
+    # calculate angle
+    angle = np.arccos(cosine_angle)
+    return angle
 
 
 if __name__ == "__main__":
