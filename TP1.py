@@ -19,42 +19,44 @@ def main():
     lines = cv2.HoughLinesP(img_thresh, rho=1, theta=np.pi/180, threshold=25, minLineLength=50, maxLineGap=50)
     # create copy of original image
     img_lines = img_original.copy()
-    # get coordinates of every line detected and draw them on new image
+    # get coordinates of every line detected and draw them on the new image
     for line in lines:
         x1, y1, x2, y2 = line[0]
         cv2.line(img_lines, (x1, y1), (x2, y2), (0, 255, 0), 1)
         cv2.circle(img_lines, (x1, y1), 1, (255, 0, 0), 2)
         cv2.circle(img_lines, (x2, y2), 1, (255, 0, 0), 2)
 
-    # calculate distance
-    distance = measure_distance(lines)
-    print("The distance between the 2 lines is: {} mm".format(round(distance*0.1, 1)))
+    # calculate distance between lines
+    distance = round(measure_distance(lines) * 0.1, 1)
 
     # show resulting images in figure
     plt.set_cmap("gray")
-    # show image 1
+    # subplot 1
     plt.subplot(1, 4, 1)
     plt.title("Original")
     plt.axis("off")
     plt.imshow(img_original)
 
-    # show image 2
+    # subplot 2
     plt.subplot(1, 4, 2)
     plt.title("Gray")
     plt.axis("off")
     plt.imshow(img_gray)
 
-    # show image 3
+    # subplot 3
     plt.subplot(1, 4, 3)
     plt.title("Binary")
     plt.axis("off")
     plt.imshow(img_thresh)
 
-    # show image 4
+    # subplot 4
     plt.subplot(1, 4, 4)
     plt.title("Lines")
     plt.axis("off")
     plt.imshow(img_lines)
+
+    # print result on figure
+    plt.text(-300, 250, "The distance between the 2 lines is: {} mm".format(distance))
     plt.show()
 
 
@@ -76,17 +78,17 @@ def measure_distance(lines):
     # calculate angle between lines
     angle = get_angle(p1, p3, p4)
     # calculate distance between lines
-    h = np.sqrt(((p1[0] - p3[0])**2) + ((p1[1] - p3[1])**2))
+    hypotenuse = np.sqrt(((p1[0] - p3[0])**2) + ((p1[1] - p3[1])**2))
     # calculate distance
-    distance_bottom = h * np.sin(angle)
+    distance_bottom = hypotenuse * np.sin(angle)
 
     # distance from top
     # calculate angle between lines
     angle = get_angle(p2, p4, p3)
     # calculate distance between lines
-    h = np.sqrt(((p2[0] - p4[0])**2) + ((p2[1] - p4[1])**2))
+    hypotenuse = np.sqrt(((p2[0] - p4[0])**2) + ((p2[1] - p4[1])**2))
     # calculate distance
-    distance_top = h * np.sin(angle)
+    distance_top = hypotenuse * np.sin(angle)
 
     # calculate average distance
     distance = np.average([distance_top, distance_bottom])
