@@ -1,8 +1,6 @@
 import os
 import cv2
-import numpy as np
 import pytesseract
-from matplotlib import pyplot as plt
 
 tesseract_path = "C:/Program Files/Tesseract-OCR/tesseract.exe"
 pytesseract.pytesseract.tesseract_cmd = tesseract_path
