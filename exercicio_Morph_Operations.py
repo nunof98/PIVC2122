@@ -24,4 +24,5 @@ cv2.imshow("Eroded", img_eroded)
 mask = np.uint8(img_eroded / 255)
 img_segmented = img_gray * mask
 cv2.imshow("Segmented image", img_segmented)
+
 cv2.waitKey(0)
